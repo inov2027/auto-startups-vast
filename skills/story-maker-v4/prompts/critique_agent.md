@@ -32,8 +32,8 @@ it PASS, FAIL, or ADVISORY, with specific feedback.
 
 2. **Read the question bank.** Load
    [`assets/directing-questions.md`](../assets/directing-questions.md). There
-   are 200+ questions across 7 sections (Story, Shot Design, Camera,
-   Composition, Editing, Animation, Sound).
+   are 200+ questions across 9 sections (Story, Shot Design, Camera,
+   Composition, Editing, Animation, Sound, Spatial, and H3/anime production).
 
 3. **Evaluate each question.** For each question:
    - Check the relevant artifacts/fields

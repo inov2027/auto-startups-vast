@@ -39,6 +39,11 @@ into scenes.
 - **Anti-sameness.** Do NOT pad with repeated walk/run/chase loops. Every beat must
   advance character, conflict, or stakes. Consecutive beats must differ in setting,
   cast, or emotional register.
+- **Anime/cartoon production thinking.** Before prose expansion, choose a concrete
+  production target: line/edge treatment, shape language, color script, background
+  finish, and animation timing model (full, limited, smear, held pose). Give each
+  major character a readable silhouette and one repeatable acting mannerism. See
+  [`assets/anime-studio-playbook.md`](../assets/anime-studio-playbook.md).
 - **Videography writing.** Favour visible action and physical change over internal
   monologue. Write what the camera can see: who enters/exits, where they stand, what
   they touch, how the light shifts. Leave explicit motion/camera choices to Agent 3,

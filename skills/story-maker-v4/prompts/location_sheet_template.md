@@ -1,6 +1,6 @@
 # Location Lock Sheet
 
-Create a single ultra-cinematic Pixar-style **empty-stage establishing plate** for a reusable location lock.
+Create a single ultra-cinematic, studio-quality animation **empty-stage establishing plate** for a reusable location lock.
 
 ## Location
 - **Id:** {location_id}

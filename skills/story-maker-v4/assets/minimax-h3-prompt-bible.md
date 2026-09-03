@@ -1,16 +1,22 @@
 # MiniMax H3 prompt bible (story-maker-v4)
 
-Distilled from `Research/minimax-h3/` and the official H3-Base-Ref2VA
-specification at `.devin/skills/minimax-h3-prompter/references/ref2va-format.md`.
-Minimax H3 is an omni-modal R2V model: it takes reference images (we attach ONE
-storyboard sheet), follows a structured 6-section prompt with high adherence,
-and generates video with **native stereo audio** (voice, SFX, music).
-Hard limit: **15 seconds per generation**.
+Distilled from `Research/minimax-h3/`, MiniMax's official
+`VIDEO_PROMPT_WRITING_GUIDE_base_en.md`, and
+`VIDEO_PROMPT_WRITING_GUIDE_ref_en.md`. MiniMax H3 is an omni-modal R2V model:
+it accepts up to 9 reference images, 3 reference videos, 3 audio clips (12 files
+total), follows a structured 6-section Ref2VA prompt, and generates video with
+**native 32 kHz stereo audio** (voice, SFX, music). Hard limit: **15 seconds per
+generation**. H3's Context-IR stage works best when every shot is an explicit
+audiovisual instruction, not a plot summary.
 
 ## The 6-section Ref2VA contract
 
 Output ONLY these six sections, in this exact order, with lowercase field names
-followed by a colon. No preamble, no markdown fences, no commentary.
+followed by a colon. No preamble, no markdown fences, no commentary. Write all
+six sections in English; preserve original language only inside dialogue/lyrics
+and quoted visible text. `detailed_description` must state composition, subject
+appearance/position, environment/lighting, action/state changes, camera motion,
+current sound, and reference effect for every shot.
 
 ```
 subject_definitions:

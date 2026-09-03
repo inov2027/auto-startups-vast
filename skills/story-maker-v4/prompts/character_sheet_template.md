@@ -1,4 +1,4 @@
-Create a lean Pixar / Disney Animation style character identity sheet for use as an image-edit reference. Maximize character pixels; minimize UI chrome, white empty space, and text.
+Create a lean, studio-quality stylized animation character identity sheet for use as an image-edit reference. Maximize character pixels; minimize UI chrome, white empty space, and text.
 
 Identity (for the image model only — do NOT render as large on-sheet essay text):
 Character: {character_name} | Species: {species} | Age: {age}
@@ -16,7 +16,7 @@ Full-body turnaround with perfect consistency. Same face, hair, outfit, and acce
 
 Arrange the six views horizontally across the 16:9 sheet in a single row (left to right: Front, 3/4 Front, Left Side, Right Side, Back, 3/4 Rear). Keep figures large and evenly spaced; no environment scenery behind the figures.
 
-Neutral production stance. Pixar-quality 3D.
+Neutral production stance. Polished stylized 3D CGI or clean 2D anime finish matching the scene's style target.
 
 ────────────────────────────────────────
 2. SCALE REFERENCE
@@ -62,10 +62,10 @@ SHEET STYLE
 • No color palette bars or swatches
 • No personality / bio / profile paragraphs on the image
 • No action-pose montage
-• Soft studio lighting, clean stylized 3D CGI
+• Soft studio lighting, clean stylized 3D CGI or clean 2D anime finish
 • {render_style}
 
 ────────────────────────────────────────
 NEGATIVE PROMPT
 ────────────────────────────────────────
-Large headers, essay text, color palette swatches, personality bio blocks, action pose montage, storyboard, comic page, environment scenery, forest background, sketch, anime, photorealistic human, inconsistent proportions, duplicate limbs, cropped body, low quality, blurry, watermark, logo, subtitle captions, dialogue text, text overlap, unfinished render, multiple outfits, different hairstyles, extra accessories not listed, harsh shadows, dense production-poster chrome.
+Large headers, essay text, color palette swatches, personality bio blocks, action pose montage, storyboard, comic page, environment scenery, forest background, unfinished sketch, photorealistic human, inconsistent proportions, duplicate limbs, cropped body, low quality, blurry, watermark, logo, subtitle captions, dialogue text, text overlap, unfinished render, multiple outfits, different hairstyles, extra accessories not listed, harsh shadows, dense production-poster chrome.

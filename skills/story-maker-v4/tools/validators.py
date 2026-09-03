@@ -75,6 +75,12 @@ COMPOSITION_TYPES = (
     "visual_hierarchy", "headroom", "look_room", "screen_direction",
 )
 
+# Anime-studio screen-direction vocabulary for shot-level layout continuity.
+SCREEN_DIRECTIONS = (
+    "left_to_right", "right_to_left", "toward_camera", "away_from_camera",
+    "held", "top_to_bottom", "bottom_to_top",
+)
+
 # Suggested emotion vocabulary for beat boards (warn-only — not enforced).
 # See prompts/beat_board.md and assets/directors-guide.md Section 1.
 BEAT_EMOTIONS = (
@@ -82,6 +88,15 @@ BEAT_EMOTIONS = (
     "shock", "chaos", "triumph", "sadness", "wonder", "relief",
     "anger", "tenderness", "suspense", "hope", "despair", "confusion",
     "awe", "disgust", "longing", "pride", "shame", "curiosity",
+)
+
+# Anime-studio scene-production metadata required by V4 scenes.md.
+SCENE_PRODUCTION_FIELDS = (
+    "style_target",
+    "acting_beat",
+    "layout_strategy",
+    "visual_motif",
+    "sound_world",
 )
 
 
@@ -189,6 +204,11 @@ def parse_scenes(md: str) -> dict[str, Any]:
             "objects": parse_cid_list(kv.get("objects", "")),
             "beats": parse_int_list(kv.get("beats", "")),
             "beat": kv.get("beat", "").strip(),
+            "style_target": kv.get("style_target", "").strip(),
+            "acting_beat": kv.get("acting_beat", "").strip(),
+            "layout_strategy": kv.get("layout_strategy", "").strip(),
+            "visual_motif": kv.get("visual_motif", "").strip(),
+            "sound_world": kv.get("sound_world", "").strip(),
         })
     return {"target_seconds": target, "scene_budget": budget, "scenes": scenes}
 
@@ -352,6 +372,9 @@ def parse_storyboard(md: str) -> dict[str, Any]:
             "dialogue": kv.get("dialogue", "").strip(),
             "shot_size": kv.get("shot_size", "").strip().lower(),
             "composition": [s.strip().lower() for s in kv.get("composition", "").split(",") if s.strip()],
+            "acting_beat": kv.get("acting_beat", "").strip(),
+            "layout": kv.get("layout", "").strip(),
+            "screen_direction": kv.get("screen_direction", "").strip().lower(),
         })
         cur_gen["shots"].append(cur_shot)
         cur_shot = None
@@ -474,6 +497,12 @@ def validate_scenes(
             res.error(f"scene {sid}: cast is empty")
         if not sc["location_id"]:
             res.error(f"scene {sid}: location_id is missing")
+        for field in SCENE_PRODUCTION_FIELDS:
+            if not sc.get(field):
+                res.error(
+                    f"scene {sid}: {field} is missing — V4 scenes need anime-studio "
+                    "style, acting, layout, motif, and sound direction"
+                )
         known_cids.update(sc["cast"])
     if target_seconds is not None and target_seconds > 0:
         total = sum(sc["target_seconds"] for sc in scenes)
@@ -640,6 +669,17 @@ def validate_storyboard(md: str, scenes: dict[str, Any] | None = None) -> Valida
                     res.error(f"{slabel}: composition {comp!r} not in {COMPOSITION_TYPES}")
             if not comps:
                 res.warn(f"{slabel}: missing 'composition:' (encouraged for new runs — see directors-guide Section 4)")
+
+            # Anime-studio production fields turn action into stageable layout.
+            if not shot.get("acting_beat"):
+                res.error(f"{slabel}: missing 'acting_beat:' (anticipation → action → reaction/settle)")
+            if not shot.get("layout"):
+                res.error(f"{slabel}: missing 'layout:' (depth layers, eye path, silhouette)")
+            direction = shot.get("screen_direction", "")
+            if not direction:
+                res.error(f"{slabel}: missing 'screen_direction:'")
+            elif direction not in SCREEN_DIRECTIONS:
+                res.error(f"{slabel}: screen_direction {direction!r} not in {SCREEN_DIRECTIONS}")
 
             if not shot["action"]:
                 res.error(f"{slabel}: missing 'action:'")
@@ -834,8 +874,8 @@ def _check_prompt_quality(prompt_text: str) -> list[str]:
     """Return warnings for prompt-quality issues (brand refs, excessive negatives)."""
     warnings: list[str] = []
     lower = prompt_text.lower()
-    # Brand references
-    for brand in ("pixar", "disney", "dreamworks"):
+    # Brand/studio references: describe craft attributes, never imitate a named studio.
+    for brand in _PROHIBITED_STYLE_BRANDS:
         if brand in lower:
             warnings.append(f"prompt uses brand reference '{brand}'; replace with concrete visual attributes")
     # Excessive negatives: find HARD EXCLUSIONS section and count "no ..." constraints
@@ -963,6 +1003,9 @@ _LABEL_RE = re.compile(r"<(Subject|Picture|Video|Audio)\s+(\d+)>")
 # <d>[Language] ... </d> dialogue tags.
 _DIALOGUE_RE = re.compile(r"<d>\s*\[(\w+)\]\s*(.*?)\s*</d>", re.S)
 
+# House style prohibits studio/brand imitation; describe craft attributes instead.
+_PROHIBITED_STYLE_BRANDS = ("pixar", "disney", "dreamworks", "ghibli")
+
 
 def validate_video_prompt_legacy(text: str, sb: dict[str, Any], gen_id: str) -> ValidationResult:
     """Legacy 4-part validator (Reference / Timeline / Negative Prompt).
@@ -1080,16 +1123,66 @@ def validate_video_prompt(text: str, sb: dict[str, Any], gen_id: str) -> Validat
 
     # --- subject_definitions: collect defined labels ---
     sd_text = sections["subject_definitions"]
-    defined_labels: set[str] = set()
+    defined_labels: dict[str, str] = {}
     for m in _LABEL_RE.finditer(sd_text):
-        defined_labels.add(f"{m.group(1)} {m.group(2)}")
+        defined_labels[f"{m.group(1)} {m.group(2)}"] = m.group(1)
     if "Picture 1" not in defined_labels:
         res.error("subject_definitions must define <Picture 1> as the storyboard sheet reference")
+    else:
+        pic_line = next(
+            (line for line in sd_text.splitlines() if re.match(r"^\s*<\s*Picture\s+1\s*>", line)),
+            "",
+        )
+        if "[Shot" not in pic_line or "storyboard" not in pic_line.lower():
+            res.error(
+                "<Picture 1> definition must map the storyboard to its shots "
+                "(e.g. 'storyboard reference for [Shot 1] and [Shot 2], defining "
+                "viewpoint, placement, and shot order')"
+            )
 
-    # --- retention_analysis: check markers ---
+    for section_name in ("summary", "detailed_description", "overall_soundscape", "non_diegetic_music"):
+        for m in _LABEL_RE.finditer(sections[section_name]):
+            label = f"{m.group(1)} {m.group(2)}"
+            if label not in defined_labels:
+                res.error(f"{section_name} references {m.group(0)} not defined in subject_definitions")
+
+    gen_index = next(
+        (i for i, g in enumerate(sb.get("generations", [])) if g.get("gen_id") == gen_id),
+        0,
+    )
+    if gen_index > 0 and "Video 1" not in defined_labels:
+        res.error(
+            f"generation {gen_id} receives the previous rendered tail; define "
+            "<Video 1> as that video-continuation reference"
+        )
+    if gen_index > 0 and "video continuation" not in summary.lower():
+        res.error(
+            f"generation {gen_id} summary must include the task type "
+            "'video continuation' for its rendered tail reference"
+        )
+
+    for brand in _PROHIBITED_STYLE_BRANDS:
+        if re.search(rf"\b{re.escape(brand)}\b", text, re.IGNORECASE):
+            res.error(
+                f"prompt uses brand reference '{brand}'; describe concrete animation "
+                "craft (line, shape, color, timing, materials) instead"
+            )
+
+    # --- retention_analysis: check labels and fixed markers ---
     ra_text = sections["retention_analysis"]
     if not re.search(r"<Picture\s+1>.*(?:storyboard|panel|composition)", ra_text, re.IGNORECASE):
         res.error("retention_analysis must state that <Picture 1> preserves the storyboard panel sequence or composition")
+    for label, kind in defined_labels.items():
+        label_lines = [
+            line for line in ra_text.splitlines()
+            if re.search(rf"<\s*{kind}\s+{label.split()[1]}\s*>", line)
+        ]
+        if not label_lines:
+            res.error(f"retention_analysis is missing an entry for <{label}>")
+            continue
+        allowed = _RETENTION_MARKERS_AUDIO if kind == "Audio" else _RETENTION_MARKERS_VISUAL
+        if not any(any(marker in line for marker in allowed) for line in label_lines):
+            res.error(f"retention_analysis for <{label}> lacks a fixed {kind} relationship marker")
     for line in ra_text.splitlines():
         line = line.strip()
         if not line or line.startswith("#"):
@@ -1145,17 +1238,37 @@ def validate_video_prompt(text: str, sb: dict[str, Any], gen_id: str) -> Validat
                         )
                 prev_time = t
 
-    # Check labels used in detailed_description are defined
+    # Check labels used in detailed_description are defined (also checked above).
     for m in _LABEL_RE.finditer(dd_text):
         label = f"{m.group(1)} {m.group(2)}"
         if label not in defined_labels:
             res.error(f"detailed_description references {m.group(0)} not defined in subject_definitions")
 
-    # --- dialogue tags: <d>[Lang] ...</d> ---
+    # --- dialogue tags: <d>[Lang] ...</d> with stable speaker IDs ---
     for m in _DIALOGUE_RE.finditer(dd_text):
         lang = m.group(1)
         if not lang:
             res.error(f"<d> tag missing language code: {m.group(0)[:50]}")
+        pre = dd_text[max(0, m.start() - 220):m.start()]
+        if not re.search(r"\((?:S\d+,?)+\)", pre):
+            res.error("dialogue must attribute a stable speaker ID like (S1) before each <d> tag")
+        if "voiceover" in pre.lower():
+            if "says in an off-screen voiceover" not in pre:
+                res.error("voiceover must use the exact phrase 'says in an off-screen voiceover'")
+            post = dd_text[m.end():m.end() + 160].lower()
+            if "lips remain" not in post or "closed" not in post:
+                res.error("voiceover must state that the on-screen character's lips remain closed")
+
+    # --- audio layer separation (official guide) ---
+    os_text = sections["overall_soundscape"]
+    if re.search(r"\b(music|score|orchestral|strings|piano|melody|motif|tempo)\b", os_text, re.I):
+        res.error("overall_soundscape contains score/music terms — move audience-only music to non_diegetic_music")
+    music_text = sections["non_diegetic_music"].strip()
+    if music_text and music_text.upper() != "N/A":
+        if not re.search(r"\b(piano|strings|violin|cello|synth|drums?|percussion|guitar|flute|brass|choir|pulse|motif|tempo|bpm)\b", music_text, re.I):
+            res.error("non_diegetic_music must name instrumentation and tempo/rhythm, not mood words")
+        elif re.search(r"\b(uplifting|sad|happy|tense|emotional|heartwarming)\b", music_text, re.I):
+            res.warn("non_diegetic_music uses abstract mood words; prefer instrumentation, tempo, and dynamics")
 
     # --- overall_soundscape and non_diegetic_music: must be present (N/A ok) ---
     if not sections["overall_soundscape"].strip():

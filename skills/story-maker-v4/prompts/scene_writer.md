@@ -27,6 +27,18 @@ of continuous action.
   in the scene (drives which character sheets get built). `characters_present` =
   the heroes on screen in the scene's main beat (may equal cast). Both are
   `[cid, ...]` lists.
+- **Production style target.** `style_target` names the concrete animation craft:
+  e.g. "expressive 2D anime with clean silhouettes, painted backgrounds, and
+  limited-animation accents" or "high-end stylized 3D cartoon with squash and
+  stretch." Never name a studio or brand.
+- **Acting beat.** `acting_beat` states the visible pose/expression/energy change
+  the animator must perform, not just plot ("guarded stillness tightens into fear").
+- **Layout strategy.** `layout_strategy` states foreground/midground/background
+  staging, eye-path, silhouette clarity, and how the scene reads at thumbnail size.
+- **Visual motif.** `visual_motif` names one repeatable shape/color/light idea that
+  links the scene and evolves with emotion.
+- **Sound world.** `sound_world` names the recurring ambience/foley/score texture;
+  H3 invents audio when it is not directed.
 - **Target per scene.** Each scene's `target_seconds` must be an integer in the
   ~60-80s band. The sum of all scene `target_seconds` must be within 15% of the run
   target (the validator enforces this — pick per-scene budgets that sum to target).
@@ -49,6 +61,11 @@ characters_present: [char_01, char_02]
 location_id: loc_forest
 objects: [obj_01, obj_02]
 beats: [1, 2, 3]
+style_target: <concrete anime/cartoon craft target; no studio brands>
+acting_beat: <visible performance change from start pose/expression to end>
+layout_strategy: <foreground/midground/background staging and eye path>
+visual_motif: <repeating shape/color/light idea>
+sound_world: <recurring ambience/foley/score texture>
 beat: <one line summarizing the scene's central action>
 
 ## Scene s2 — <title>
@@ -57,8 +74,9 @@ scene_id: s2
 ```
 
 - Scene ids are `s1`, `s2`, … (sequential).
-- Every scene block MUST have all seven keys: `scene_id`, `target_seconds`, `cast`,
-  `characters_present`, `location_id`, `objects`, `beats`, `beat`.
+- Every scene block MUST have these keys: `scene_id`, `target_seconds`, `cast`,
+  `characters_present`, `location_id`, `objects`, `beats`, `style_target`,
+  `acting_beat`, `layout_strategy`, `visual_motif`, `sound_world`, `beat`.
 - `objects` is a list of object ids from `developed_story.md`'s `## Objects`
   section that appear in this scene. Use `[]` if no named objects. Only list
   hero props / key objects — background set dressing is described in the

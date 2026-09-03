@@ -166,7 +166,8 @@ All commands run from `skills/story-maker-v4/`. Let `RUN=outputs/story-maker-v4/
 ### A1. Develop the story (Agent 1)
 
 Read the user's raw story file + `TARGET` and
-[`assets/directors-guide.md`](assets/directors-guide.md) Section 1. Author
+[`assets/directors-guide.md`](assets/directors-guide.md) Section 1 and
+[`assets/anime-studio-playbook.md`](assets/anime-studio-playbook.md). Author
 `$RUN/developed_story.md` per [`prompts/story_developer.md`](prompts/story_developer.md):
 expand/shrink to target with story structure (setup→escalation→climax→resolution),
 goals/conflict/stakes per scene, show-vs-tell, anti-sameness, videography writing,
@@ -193,8 +194,9 @@ Read `$RUN/beat_board.md` (Agent 1b). Compute `scene_count = ceil(TARGET / 70)`.
 Author `$RUN/scenes.md` per [`prompts/scene_writer.md`](prompts/scene_writer.md) —
 group beats into scenes, one `## Scene sN — <title>` block per scene with
 `scene_id`, `target_seconds`, `cast`, `characters_present`, `location_id`,
-`objects`, `beats`, `beat`. Per-scene targets must sum within 15% of `TARGET`.
-Then:
+`objects`, `beats`, `beat`, plus V4's anime-studio production metadata:
+`style_target`, `acting_beat`, `layout_strategy`, `visual_motif`, `sound_world`.
+Per-scene targets must sum within 15% of `TARGET`. Then:
 
 ```bash
 python3 scripts/validate.py "$RUN/scenes.md" --schema scenes --target-seconds "$TARGET" --run-dir "$RUN"
@@ -231,10 +233,10 @@ dialogue, `shot_size` + `composition` fields, 8-value transition grammar).
 **The 15s rule is load-bearing: a shot that does not fit in the
 current generation moves whole to the next one.**
 
-For fast-paced / short-form retention, prefer **5–8 micro-shots per 15s
-generation** (1.5–3.0s each) with dense grids (`3x3`, `2x4`, `3x4`, `4x3`).
-Each micro-shot gets a distinct `shot_size` / camera angle and its own SFX or
-vocal beat. Then:
+For dependable H3 scene production, prefer **3–5 purposeful shots per 15s
+generation** (1.5–6.0s each) with readable grids (`3x2`, `2x3`, `3x3`). Reserve
+5+ shots for intentional montage; each shot gets a distinct `shot_size` / camera
+angle and its own SFX or vocal beat. Then:
 
 ```bash
 python3 scripts/validate.py "$RUN/storyboard_sN.md" --schema storyboard \
@@ -282,8 +284,9 @@ Read all artifacts (`developed_story.md`, `beat_board.md`, `scenes.md`, all
 `storyboard_sN.md`) + [`assets/directing-questions.md`](assets/directing-questions.md)
 and author `$RUN/critique_report.md` per
 [`prompts/critique_agent.md`](prompts/critique_agent.md): evaluate every question
-(200+ across 7 sections — Story, Shot Design, Camera, Composition, Editing,
-Animation, Sound), mark each PASS/FAIL/ADVISORY with specific feedback. Then:
+(200+ across 9 sections — Story, Shot Design, Camera, Composition, Editing,
+Animation, Sound, Spatial, and H3/anime production), mark each PASS/FAIL/ADVISORY
+with specific feedback. Then:
 
 ```bash
 python3 scripts/validate.py "$RUN/critique_report.md" --schema critique \

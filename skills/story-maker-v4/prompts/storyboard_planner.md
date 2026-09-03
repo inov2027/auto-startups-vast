@@ -146,6 +146,19 @@ If none of these, **don't cut** — use camera motion instead. See
 [`assets/directors-guide.md`](../assets/directors-guide.md) Section 5 for the
 question→answer pattern and the motivated-cut checklist.
 
+### Shot production fields (`acting_beat:`, `layout:`, `screen_direction:`)
+
+Every shot must also carry three anime-studio fields (validator-enforced):
+
+- `acting_beat:` — the performance arc as a short chain: **anticipation → action
+  → reaction/settle** (e.g. `crouch → leap → wobbly landing`). This is what the
+  animator — and H3 — actually performs.
+- `layout:` — the staging read: depth layers, eye path, silhouette separation
+  (e.g. `foreground runner against flat lit background, eye path to the door`).
+- `screen_direction:` — one of `left_to_right`, `right_to_left`,
+  `toward_camera`, `away_from_camera`, `top_to_bottom`, `bottom_to_top`,
+  `held`. Maintain it across cuts (180° rule).
+
 ### Animation direction (writing `action:` as micro-beats)
 
 Animation is not "the character turns around." Animation is a sequence of
@@ -206,6 +219,9 @@ panels: [1]
 characters_present: [char_01]
 shot_size: extreme_closeup
 composition: visual_hierarchy, negative_space
+acting_beat: held breath → eyes widen → curious lean-in
+layout: eye-level macro, face silhouette against dark basement negative space
+screen_direction: held
 action: Extreme close-up on the toddler's wide brown eyes peering curiously into the dark dusty basement.
 camera: Push In fast on eyes.
 audio: Heavy breathing, ambient basement hum.
@@ -216,6 +232,9 @@ panels: [2]
 characters_present: [char_01]
 shot_size: wide
 composition: leading_lines, depth
+acting_beat: excited bounce → quick waddle-run → glance back
+layout: low tracking position, tiny feet foreground, boxes receding down corridor
+screen_direction: left_to_right
 action: Low-angle tracking shot of the toddler's tiny feet in mismatched socks padding through dust past cardboard boxes.
 camera: Low Angle Tracking Shot at fast speed.
 audio: Soft padding footsteps on dust.
@@ -226,6 +245,9 @@ panels: [3, 4]
 characters_present: [char_01]
 shot_size: medium
 composition: rule_of_thirds, leading_lines
+acting_beat: reach for canvas → push aside → awestruck pause in gold light
+layout: curtain edge foreground, toddler left third, glowing egg deep midground
+screen_direction: left_to_right
 action: The toddler pushes aside a hanging canvas sheet; a golden light shaft illuminates a large speckled glowing egg.
 camera: Handheld whip pan right to reveal the glowing egg.
 audio: Fabric rustle, faint magical shimmer hum.
@@ -236,6 +258,9 @@ panels: [5]
 characters_present: [char_01]
 shot_size: closeup
 composition: center, visual_hierarchy
+acting_beat: breath catches → mouth falls open → eyes glisten
+layout: centered lit face, darkness falling off around cheeks
+screen_direction: held
 action: Close-up on the toddler's illuminated face, mouth agape in wonder.
 camera: Static close-up with subtle shake.
 audio: Toddler gasps.
@@ -246,6 +271,9 @@ panels: [6, 7]
 characters_present: [char_01]
 shot_size: extreme_closeup
 composition: center, depth
+acting_beat: shell trembles → crack snaps → pieces burst
+layout: egg fills frame, crack line bisecting the shell
+screen_direction: held
 action: A bright crack snaps across the eggshell and pieces burst open.
 camera: Push In fast to egg center.
 audio: Sharp crack sound, wet pop.
@@ -256,6 +284,9 @@ panels: [8]
 characters_present: [char_02]
 shot_size: medium
 composition: rule_of_thirds, negative_space
+acting_beat: stumble → blink → delighted grin
+layout: tiny dino low in frame against open floor, shell fragments framing edges
+screen_direction: bottom_to_top
 action: The tiny green baby dinosaur stumbles out of the shell, blinks its huge yellow eyes, and smiles.
 camera: Tilt Up from shell to dino's face.
 audio: Dino cheerful chirp, playful pizzicato cue.
@@ -266,6 +297,9 @@ panels: [9]
 characters_present: [char_01, char_02]
 shot_size: medium
 composition: center, visual_hierarchy
+acting_beat: dino looks up and squeaks → toddler startles → shocked retreat
+layout: two-shot with dino low-center and toddler recoiling frame-right
+screen_direction: left_to_right
 action: The baby dinosaur looks straight up at the toddler and squeaks "Mama!"; the toddler jumps back with wide shocked eyes.
 camera: Medium two-shot, rapid Push In on the toddler's reaction.
 audio: Dino cheep, toddler shriek.
@@ -278,6 +312,9 @@ panel_grid: 2x3
 ### Shot 1 — 15.0-27.0s (continuous)
 panels: [1, 2, 3, 4, 5, 6]
 characters_present: [char_01, char_02]
+acting_beat: cautious approach → gentle pet → mutual settle
+layout: quiet two-shot in dusty light, characters low-center
+screen_direction: held
 action: ...
 camera: Static Shot, then Zoom In with small amplitude at slow speed.
 audio: ...

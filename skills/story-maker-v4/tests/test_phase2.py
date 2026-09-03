@@ -94,6 +94,11 @@ SCENES_MD = textwrap.dedent("""
     cast: [char_01, char_02]
     characters_present: [char_01, char_02]
     location_id: loc_basement
+    style_target: polished 3D cartoon feature animation with warm cinematic lighting
+    acting_beat: panic flips to curiosity as the baby first pats the dinosaur
+    layout_strategy: narrow corridor depth leads the eye from escape staging to a centered reunion
+    visual_motif: warm gold highlights against cool basement blues
+    sound_world: small footsteps, dinosaur chirps, soft room tone
     beat: Baby flees the dino, then befriends it.
 
     ## Scene s2 — Up the stairs
@@ -102,6 +107,11 @@ SCENES_MD = textwrap.dedent("""
     cast: [char_01, char_02]
     characters_present: [char_01, char_02]
     location_id: loc_basement
+    style_target: polished 3D cartoon feature animation with warm cinematic lighting
+    acting_beat: cautious trust grows into shared determination on each step
+    layout_strategy: diagonal stairwell ascent with characters moving toward the brightest frame corner
+    visual_motif: expanding gold light and shrinking shadows
+    sound_world: stair creaks, synchronized breathing, gentle chimes
     beat: They climb toward the light together.
 """).strip()
 
@@ -112,11 +122,17 @@ def test_validate_scenes_pass():
 
 
 def test_validate_scenes_fail_missing_location():
-    bad = SCENES_MD.replace("location_id: loc_basement\nbeat: Baby flees the dino, then befriends it.",
-                            "beat: Baby flees the dino, then befriends it.")
+    bad = SCENES_MD.replace("location_id: loc_basement\n", "", 1)
     res = validators.validate_scenes(bad, target_seconds=55)
     assert not res.ok
     assert any("location_id" in e for e in res.errors)
+
+
+def test_validate_scenes_requires_production_metadata():
+    bad = SCENES_MD.replace("acting_beat: panic flips to curiosity as the baby first pats the dinosaur\n", "", 1)
+    res = validators.validate_scenes(bad, target_seconds=55)
+    assert not res.ok
+    assert any("acting_beat" in e for e in res.errors)
 
 
 # --- validators: storyboard (generations + 15s rule) --------------------------
@@ -135,6 +151,9 @@ STORYBOARD_MD = textwrap.dedent("""
     ### Shot 1 — 0.0-7.2s (continuous)
     panels: [1, 2, 3]
     characters_present: [char_01, char_02]
+    acting_beat: panic sprint → dead-end freeze → desperate stick throw
+    layout: corridor depth layers with the baby foreground, dino midground, dead-end background
+    screen_direction: left_to_right
     action: The baby runs down the corridor; the dino bounces behind; the baby hits a dead end and throws a stick.
     camera: Handheld tracking shot behind the baby, then arc shot to a front three-quarter angle.
     audio: Little footsteps, excited chirps, stick clattering.
@@ -143,6 +162,9 @@ STORYBOARD_MD = textwrap.dedent("""
     ### Shot 2 — 7.2-15.0s (hard_cut)
     panels: [4, 5, 6]
     characters_present: [char_01, char_02]
+    acting_beat: fearful leap → tumble → tentative first pat
+    layout: low side staging with tumbling bodies foreground and warm dust behind
+    screen_direction: right_to_left
     action: The baby leaps, lands on the dino; they tumble; fear melts into a first pat.
     camera: Tracking Shot from a low side angle, then slow Push In at slow speed.
     audio: Soft thud, warm strings.
@@ -155,6 +177,9 @@ STORYBOARD_MD = textwrap.dedent("""
     ### Shot 1 — 15.0-27.0s (continuous)
     panels: [1, 2, 3, 4, 5, 6]
     characters_present: [char_01, char_02]
+    acting_beat: cautious touch → dinosaur leans in → shared calm smile
+    layout: centered two-shot with characters foreground and dusty corridor falling away
+    screen_direction: held
     action: The baby pets the dino; the dino leans in; both smile in the dusty half-light.
     camera: Static Shot, then Zoom In with small amplitude at slow speed.
     audio: Calm ambience, music softens.
@@ -427,6 +452,9 @@ def test_anti_monotony_warns_on_all_identical_transitions():
         ### Shot 1 — 0.0-2.5s (hard_cut)
         panels: [1]
         characters_present: [char_01]
+        acting_beat: braced anticipation → burst left → sharp exit
+        layout: foreground runner separated from flat background
+        screen_direction: left_to_right
         action: Char runs left.
         camera: Tracking Shot fast.
         audio: Footsteps.
@@ -434,6 +462,9 @@ def test_anti_monotony_warns_on_all_identical_transitions():
         ### Shot 2 — 2.5-5.0s (hard_cut)
         panels: [2]
         characters_present: [char_02]
+        acting_beat: brace → burst right → glance back
+        layout: counter-direction runner against empty background
+        screen_direction: right_to_left
         action: Char runs right.
         camera: Pan Left fast.
         audio: Door slam.
@@ -441,6 +472,9 @@ def test_anti_monotony_warns_on_all_identical_transitions():
         ### Shot 3 — 5.0-7.5s (hard_cut)
         panels: [3]
         characters_present: [char_01]
+        acting_beat: crouch → jump → airborne extension
+        layout: low foreground takeoff with clear upward eye path
+        screen_direction: bottom_to_top
         action: Char jumps.
         camera: Tilt Up fast.
         audio: Whoosh.
@@ -448,6 +482,9 @@ def test_anti_monotony_warns_on_all_identical_transitions():
         ### Shot 4 — 7.5-10.0s (hard_cut)
         panels: [4]
         characters_present: [char_02]
+        acting_beat: falling anticipation → heavy landing → compressed settle
+        layout: centered landing silhouette with impact space below
+        screen_direction: top_to_bottom
         action: Char lands.
         camera: Static Shot.
         audio: Thud.
@@ -455,6 +492,9 @@ def test_anti_monotony_warns_on_all_identical_transitions():
         ### Shot 5 — 10.0-12.5s (hard_cut)
         panels: [5]
         characters_present: [char_01]
+        acting_beat: floor compression → unsteady rise → upright resolve
+        layout: vertical eye path from floor contact to head
+        screen_direction: bottom_to_top
         action: Char stands up.
         camera: Pedestal Up slow.
         audio: Clothes rustle.
@@ -462,6 +502,9 @@ def test_anti_monotony_warns_on_all_identical_transitions():
         ### Shot 6 — 12.5-15.0s (hard_cut)
         panels: [6]
         characters_present: [char_02]
+        acting_beat: settle → turn away → exit
+        layout: shrinking silhouette moving into background negative space
+        screen_direction: away_from_camera
         action: Char walks away.
         camera: Static Shot.
         audio: Footsteps fading.
@@ -492,6 +535,9 @@ def test_new_transition_values_accepted():
         ### Shot 1 — 0.0-3.75s (cut_on_action)
         panels: [1, 2]
         characters_present: [char_01]
+        acting_beat: wind-up → stick release → follow-through
+        layout: foreground arm swing with clear throwing arc
+        screen_direction: left_to_right
         action: Char throws a stick mid-swing.
         camera: Tracking Shot fast.
         audio: Whoosh of stick.
@@ -499,6 +545,9 @@ def test_new_transition_values_accepted():
         ### Shot 2 — 3.75-7.5s (reaction_cut)
         panels: [3, 4]
         characters_present: [char_02]
+        acting_beat: neutral gaze → eyes widen → frozen shock
+        layout: centered face silhouette with clean background separation
+        screen_direction: held
         action: Char's eyes widen in shock.
         camera: Push In fast on eyes.
         audio: Sharp gasp.
@@ -506,6 +555,9 @@ def test_new_transition_values_accepted():
         ### Shot 3 — 7.5-11.25s (audio_led)
         panels: [5]
         characters_present: [char_01]
+        acting_beat: listening hold → cautious reach → door yields
+        layout: door frame as a frame-within-frame around the reaching hand
+        screen_direction: toward_camera
         action: Door creaks open before we see it.
         camera: Static Shot.
         audio: Door creak starts before the visual.
@@ -513,6 +565,9 @@ def test_new_transition_values_accepted():
         ### Shot 4 — 11.25-15.0s (whip_pan)
         panels: [6]
         characters_present: [char_02]
+        acting_beat: startled turn → room reveal → wide-eyed settle
+        layout: sweeping diagonal from character foreground to new-room background
+        screen_direction: right_to_left
         action: Whip pan reveals the new room.
         camera: Whip Pan fast.
         audio: Whoosh.
@@ -536,13 +591,24 @@ def test_audio_led_requires_audio():
     assert any("audio_led" in e for e in res.errors)
 
 
+def test_shot_production_fields_required():
+    bad = STORYBOARD_MD.replace(
+        "acting_beat: panic sprint → dead-end freeze → desperate stick throw\n",
+        "",
+        1,
+    )
+    res = validators.validate_storyboard(bad)
+    assert not res.ok
+    assert any("acting_beat" in e for e in res.errors)
+
+
 # --- 6-section Ref2VA validator ----------------------------------------------
 
 REF2VA_PROMPT = textwrap.dedent("""
     subject_definitions:
     <Subject 1> is the toddler in the white onesie in <Picture 1>, with chubby cheeks and big eyes.
     <Subject 2> is the tiny green dinosaur in <Picture 1>, with large yellow eyes and a playful expression.
-    <Picture 1> is the storyboard sheet for this generation.
+    <Picture 1> is the storyboard reference for [Shot 1] and [Shot 2], defining viewpoint, subject placement, and shot order.
 
     summary:
     [reference generation] The target video shows the baby running from the dinosaur, then befriending it.
@@ -553,20 +619,73 @@ REF2VA_PROMPT = textwrap.dedent("""
     <Picture 1> (storyboard reference): fully_preserved - composition, framing, and panel sequence.
 
     detailed_description:
-    The target video uses Pixar-quality cinematic 3D animation with warm natural lighting.
-    [Shot 1] The baby runs through the corridor while the dinosaur happily chases. Begin with a handheld tracking shot following behind the baby. As the baby reaches the dead end, smoothly arc around to a front three-quarter angle. The dinosaur softly says, <d>[English] Mama.</d> Never generate duplicate characters or extra babies.
+    The target video uses polished stylized 3D cartoon animation with warm natural lighting.
+    [Shot 1] The baby runs through the corridor while the dinosaur happily chases. Begin with a handheld tracking shot following behind the baby. As the baby reaches the dead end, smoothly arc around to a front three-quarter angle. The dinosaur, a small chirping green creature with a high playful voice (S1), softly says, <d>[English] Mama.</d> Never generate duplicate characters or extra babies.
     [Shot 2] At 00:07.200, the shot cuts to the baby petting the smiling dinosaur. The baby carefully reaches out and gently pats the dinosaur's head. Finish with a slow cinematic push-in toward both characters.
 
     overall_soundscape:
-    Little footsteps, excited chirps, stick clattering, soft thud, and warm strings throughout.
+    Little footsteps, excited chirps, stick clattering, and a soft thud across the generation.
 
     non_diegetic_music:
-    Gentle orchestral strings with a warm, uplifting tempo that softens in the second shot.
+    Gentle orchestral strings at a moderate tempo with a soft four-note motif that decrescendos under the second shot.
 """).strip()
 
 
 def test_ref2va_prompt_pass():
     res = validators.validate_video_prompt(REF2VA_PROMPT, _sb(), "g1")
+    assert res.ok, res.errors
+
+
+def test_ref2va_prompt_rejects_studio_brand_reference():
+    bad = REF2VA_PROMPT.replace(
+        "polished stylized 3D cartoon animation",
+        "Pixar-quality cinematic 3D animation",
+    )
+    res = validators.validate_video_prompt(bad, _sb(), "g1")
+    assert not res.ok
+    assert any("brand reference" in e for e in res.errors)
+
+
+def test_ref2va_prompt_requires_tail_video_reference_for_g2():
+    bad = REF2VA_PROMPT.replace(
+        "[Shot 2] At 00:07.200, the shot cuts to the baby petting the smiling dinosaur. The baby carefully reaches out and gently pats the dinosaur's head. Finish with a slow cinematic push-in toward both characters.",
+        "[Shot 1] The baby gently pets the smiling dinosaur in the corridor. Finish with a slow cinematic push-in toward both characters.",
+    )
+    bad = bad.replace("[Shot 1] The baby runs", "[Shot 1] The baby runs")
+    res = validators.validate_video_prompt(bad, _sb(), "g2")
+    assert not res.ok
+    assert any("<Video 1>" in e for e in res.errors)
+    assert any("video continuation" in e for e in res.errors)
+
+
+def test_ref2va_g2_prompt_with_tail_reference_passes():
+    prompt = textwrap.dedent("""
+        subject_definitions:
+        <Subject 1> is the toddler in the white onesie in <Picture 1>, with chubby cheeks and big eyes.
+        <Subject 2> is the tiny green dinosaur in <Picture 1>, with large yellow eyes and a playful expression.
+        <Picture 1> is the storyboard reference for [Shot 1], defining viewpoint, subject placement, and shot order.
+        <Video 1> is the previous generation's rendered tail and continuation starting point.
+
+        summary:
+        [video continuation + reference generation] The target video continues from <Video 1> as the toddler and dinosaur settle together.
+
+        retention_analysis:
+        <Subject 1> (appears in [Shot 1]): fully_preserved - the toddler's onesie, chubby cheeks, and big eyes are retained.
+        <Subject 2> (appears in [Shot 1]): fully_preserved - the dinosaur's green color, large yellow eyes, and playful expression are retained.
+        <Picture 1> (storyboard reference): fully_preserved - composition, framing, and panel sequence.
+        <Video 1> (continuation starting point): fully_preserved - the ending pose, staging, lighting, and calm motion continue.
+
+        detailed_description:
+        Polished stylized 3D cartoon animation with warm natural lighting and soft dust-filled corridor air.
+        [Shot 1] Continue directly from <Video 1>: the toddler in the white onesie kneels beside the tiny green dinosaur, both centered in the warm corridor light. The toddler reaches out slowly, pats the dinosaur's head once, and both settle into calm smiles while the camera slowly zooms in with small amplitude at slow speed. Soft fabric rustles and a happy dinosaur chirp are audible.
+
+        overall_soundscape:
+        Quiet corridor room tone, gentle fabric rustle, and one soft cheerful chirp.
+
+        non_diegetic_music:
+        Gentle pizzicato strings at a slow tempo, softly fading under the final smile.
+    """).strip()
+    res = validators.validate_video_prompt(prompt, _sb(), "g2")
     assert res.ok, res.errors
 
 
@@ -629,12 +748,42 @@ def test_ref2va_prompt_rejects_wrong_shot_count():
 
 def test_ref2va_prompt_rejects_empty_audio_section():
     bad = REF2VA_PROMPT.replace(
-        "overall_soundscape:\nLittle footsteps, excited chirps, stick clattering, soft thud, and warm strings throughout.",
+        "overall_soundscape:\nLittle footsteps, excited chirps, stick clattering, and a soft thud across the generation.",
         "overall_soundscape:\n"
     )
     res = validators.validate_video_prompt(bad, _sb(), "g1")
     assert not res.ok
     assert any("overall_soundscape" in e for e in res.errors)
+
+
+def test_ref2va_prompt_rejects_dialogue_without_speaker_id():
+    bad = REF2VA_PROMPT.replace(
+        "The dinosaur, a small chirping green creature with a high playful voice (S1), softly says,",
+        "The dinosaur softly says,",
+    )
+    res = validators.validate_video_prompt(bad, _sb(), "g1")
+    assert not res.ok
+    assert any("speaker ID" in e for e in res.errors)
+
+
+def test_ref2va_prompt_rejects_score_terms_in_soundscape():
+    bad = REF2VA_PROMPT.replace(
+        "Little footsteps, excited chirps, stick clattering, and a soft thud",
+        "Little footsteps and warm orchestral strings",
+    )
+    res = validators.validate_video_prompt(bad, _sb(), "g1")
+    assert not res.ok
+    assert any("non_diegetic_music" in e for e in res.errors)
+
+
+def test_ref2va_prompt_rejects_mood_only_music():
+    bad = REF2VA_PROMPT.replace(
+        "Gentle orchestral strings at a moderate tempo with a soft four-note motif that decrescendos under the second shot.",
+        "Warm uplifting music throughout.",
+    )
+    res = validators.validate_video_prompt(bad, _sb(), "g1")
+    assert not res.ok
+    assert any("instrumentation" in e for e in res.errors)
 
 
 def test_legacy_validator_still_works():
@@ -662,6 +811,20 @@ def test_composition_types_has_12_values():
 
 def _make_storyboard_with_shots(shots_config: str) -> str:
     """Build a minimal valid storyboard with custom shot fields."""
+    if "acting_beat:" not in shots_config:
+        blocks = shots_config.split("\n\n")
+        shots_config = "\n\n".join(
+            block.replace(
+                "characters_present: [char_01]",
+                "characters_present: [char_01]\n        acting_beat: anticipation → action → reaction\n        layout: readable subject silhouette over separated depth layers\n        screen_direction: held",
+                1,
+            ).replace(
+                "characters_present: [char_02]",
+                "characters_present: [char_02]\n        acting_beat: anticipation → action → reaction\n        layout: readable subject silhouette over separated depth layers\n        screen_direction: held",
+                1,
+            )
+            for block in blocks
+        )
     return textwrap.dedent(f"""
         # Scene s1 — Test
         scene_id: s1
@@ -1395,6 +1558,11 @@ def test_validate_scenes_beat_coverage(tmp_path):
         location_id: loc_test
         objects: []
         beats: [1, 2, 3]
+        style_target: expressive 2D anime with clean silhouettes
+        acting_beat: tension builds toward a decisive first action
+        layout_strategy: strong foreground subject with layered midground threat
+        visual_motif: red accents against deep blue shadows
+        sound_world: low ambience, cloth movement, percussive footfalls
         beat: First three beats.
 
         ## Scene s2 — Test
@@ -1405,6 +1573,11 @@ def test_validate_scenes_beat_coverage(tmp_path):
         location_id: loc_test
         objects: []
         beats: [4, 5]
+        style_target: expressive 2D anime with clean silhouettes
+        acting_beat: fear resolves into relief and renewed confidence
+        layout_strategy: open negative space closes into a warm two-shot
+        visual_motif: red accents soften into gold
+        sound_world: room tone, soft impacts, bright final accent
         beat: Last two beats.
     """).strip()
     res = validators.validate_scenes(md, target_seconds=90, beat_board_path=bb_path)
@@ -1439,6 +1612,11 @@ def test_validate_scenes_beat_duplication_error(tmp_path):
         location_id: loc_test
         objects: []
         beats: [3, 4, 5]
+        style_target: expressive 2D anime with clean silhouettes
+        acting_beat: surprise becomes relief across the resolution
+        layout_strategy: compressed staging opens toward the exit
+        visual_motif: red-to-gold emotional color shift
+        sound_world: tense pulse, impact, airy resolve
         beat: Beats 3-5.
     """).strip()
     res = validators.validate_scenes(md, target_seconds=90, beat_board_path=bb_path)
@@ -1460,6 +1638,11 @@ def test_validate_scenes_no_beat_board_backward_compat():
         characters_present: [char_01]
         location_id: loc_test
         objects: []
+        style_target: stylized cartoon animation with readable shapes
+        acting_beat: neutral setup turns into visible discovery
+        layout_strategy: centered subject with clear look-room
+        visual_motif: circular discovery shape
+        sound_world: quiet room tone and one soft accent
         beat: One beat.
     """).strip()
     res = validators.validate_scenes(md, target_seconds=70, beat_board_path=None)
@@ -1480,6 +1663,11 @@ def test_validate_scenes_beats_backward_compat():
         characters_present: [char_01]
         location_id: loc_test
         objects: []
+        style_target: stylized cartoon animation with readable shapes
+        acting_beat: static tension releases into action
+        layout_strategy: layered foreground, subject, and background
+        visual_motif: converging diagonal lines
+        sound_world: held ambience and decisive foley
         beat: Old-style scene without beats field.
     """).strip()
     # No beat_board_path → no cross-check → passes

@@ -1137,3 +1137,98 @@ artifacts, producing `critique_report.md` with PASS/FAIL per question.
   declared for shot 1 in spatial_plan_sN.md.
 - **Pass:** materialized block and first shot spatial state agree.
 - **Fail:** materialized block contradicts shot 1's declared spatial state.
+
+## Section 9: H3 & Anime Production
+
+### Q9.1 — Does every scene declare a concrete style target?
+- **Check:** scenes.md `style_target` — names animation craft (line, shape,
+  material, color, timing) without a studio or brand reference.
+- **Pass:** every scene has a concrete production style target.
+- **Fail:** missing style target or a brand/studio imitation phrase.
+
+### Q9.2 — Does every scene define an acting beat?
+- **Check:** scenes.md `acting_beat` — visible start state, action, and
+  reaction/settle, not an abstract emotion.
+- **Pass:** the animator can stage the performance from the sentence.
+- **Fail:** missing beat or emotion-only wording with no physical change.
+
+### Q9.3 — Is the layout readable at thumbnail size?
+- **Check:** scenes.md `layout_strategy` — foreground/midground/background,
+  eye path, and silhouette separation are explicit.
+- **Pass:** the first read and depth layers are clear.
+- **Fail:** no staging strategy, or the subject cannot be separated from the background.
+
+### Q9.4 — Does every scene use a repeatable visual motif?
+- **Check:** scenes.md `visual_motif` — one shape, color, or light idea that
+  evolves with the scene's emotion.
+- **Pass:** motif is concrete and connected to the dramatic beat.
+- **Fail:** missing motif or an unrelated decorative idea.
+
+### Q9.5 — Is the scene's sound world directed?
+- **Check:** scenes.md `sound_world` — recurring ambience, foley, and score
+  texture are named; video prompts carry shot-level sound.
+- **Pass:** sound has a designed identity and supports the action.
+- **Fail:** sound is omitted, generic, or left for H3 to invent.
+
+### Q9.6 — Are H3 generations paced for model reliability?
+- **Check:** storyboard_sN.md — normal generations use 3–5 purposeful shots by
+  default; dense montage is motivated; shots are not needlessly sub-second.
+- **Pass:** pacing follows the V4 H3 profile or has a clear montage reason.
+- **Fail:** excessive cuts for variety or long static shots with no progression.
+
+### Q9.7 — Does each shot contain one dominant action?
+- **Check:** storyboard_sN.md `action:` — no shot asks H3 to perform several
+  unrelated major actions at once.
+- **Pass:** one dominant action plus reaction per shot.
+- **Fail:** compound action lists that cannot be read as one animation beat.
+
+### Q9.8 — Does each shot have anticipation/action/reaction or an intentional hold?
+- **Check:** storyboard_sN.md and spatial plan — performance beats show
+  preparation, movement, and response; holds are motivated.
+- **Pass:** animation beats are sequential and readable.
+- **Fail:** instant state changes with no acting transition.
+
+### Q9.9 — Are storyboard sheets treated as layout, not decorative art?
+- **Check:** image_prompts/ — panels specify camera height, subject placement,
+  pose, action direction, and emotion; no text or labels.
+- **Pass:** panels function as production layout for H3.
+- **Fail:** panels are vague mood images or include textual storyboard chrome.
+
+### Q9.10 — Does every video prompt preserve H3's six-section order?
+- **Check:** video_prompts/*.txt — exact `subject_definitions`, `summary`,
+  `retention_analysis`, `detailed_description`, `overall_soundscape`,
+  `non_diegetic_music` order.
+- **Pass:** deterministic validator passes with six ordered sections.
+- **Fail:** any missing, reordered, renamed, or extra section.
+
+### Q9.11 — Does detailed_description avoid plot summary?
+- **Check:** video_prompts/*.txt — every shot states composition, subject
+  appearance/position, environment/lighting, action/state change, camera,
+  sound, and reference effect.
+- **Pass:** shots read as executable audiovisual instructions.
+- **Fail:** shots summarize story events without visible/audible detail.
+
+### Q9.12 — Are reference labels stable and defined before use?
+- **Check:** video_prompts/*.txt — no summary, detailed, or audio section uses
+  an undefined `<Subject N>`, `<Picture N>`, `<Video N>`, or `<Audio N>`.
+- **Pass:** every label is defined once and keeps its meaning.
+- **Fail:** undeclared labels, renumbered meanings, or references to nonexistent assets.
+
+### Q9.13 — Does g2+ declare the rendered tail as `<Video 1>`?
+- **Check:** video_prompts/*_g2+.txt — subject_definitions defines `<Video 1>`,
+  summary includes `video continuation`, and Shot 1 starts from the observed end state.
+- **Pass:** tail-video continuity is explicit and spec-compliant.
+- **Fail:** a continuation render has no declared video reference.
+
+### Q9.14 — Are identity/count locks present without a forbidden negative block?
+- **Check:** video_prompts/*.txt — inline prose states what must not duplicate
+  or drift; no separate legacy Negative Prompt section appears.
+- **Pass:** locks are inside detailed_description and section count stays six.
+- **Fail:** identity/count risks are omitted or a seventh Negative Prompt block is added.
+
+### Q9.15 — Is every audio layer placed in the correct section?
+- **Check:** video_prompts/*.txt — dialogue/diegetic events stay in
+  detailed_description, ambience/physical sound in overall_soundscape, score in
+  non_diegetic_music.
+- **Pass:** no duplicated dialogue or mood-only score descriptions.
+- **Fail:** dialogue repeated in soundscape or abstract emotion words used as music direction.

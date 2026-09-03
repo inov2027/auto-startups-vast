@@ -15,7 +15,8 @@ and fix until it passes.
 
 Write one 6-section Ref2VA prompt per generation, following the canonical
 H3 Ref2VA contract (see [`assets/ref2va-format.md`](../assets/ref2va-format.md)
-and the prompt bible). The six sections,
+and the prompt bible). Write all six sections in English; preserve source
+language only inside dialogue/lyrics and quoted visible text. The six sections,
 in exact order, are:
 
 ```
@@ -72,7 +73,12 @@ non_diegetic_music:
 - Visual markers only: `fully_preserved` | `partially_preserved` | `attribute_transfer` | `weak_reference`.
 
 ### detailed_description
-- **Style statement before `[Shot 1]`** — 1-2 sentences, not inside any shot.
+- **Style statement before `[Shot 1]`** — 1-2 sentences naming the concrete
+  animation/cinematography craft (not a studio brand).
+- Each `[Shot N]` must explicitly establish: current composition, subject
+  appearance and position, environment and lighting, action/state changes,
+  camera movement, current sound, and where each reference takes effect.
+- Do not write plot summary. H3 needs visible and audible playback instructions.
 - `[Shot 1]` has **no timestamp**. Later shots: `[Shot N] At MM:SS.mmm` with strictly increasing generation-local times.
 - **One dominant action per shot.**
 - Shot count and timestamps must match the storyboard generation exactly — the validator enforces both.
@@ -133,10 +139,12 @@ handled at render time: `render_all.py` renders generations sequentially and
 passes the previous generation's rendered tail (3s) as a `ref_video` to the
 next generation. This means:
 
-- **For g1 of each scene**: no video reference (first generation of the run,
-  or first of a new scene if no cross-scene tail is available).
-- **For g(K+1) and later**: the video prompt should describe the opening as
-  continuing from the previous generation's ending state. The rendered tail
-  will be attached automatically by `render_all.py` — you do NOT need to
-  declare `<Video>` references in the prompt text.
+- **For g1 of each scene**: no `<Video N>` entry unless a cross-scene tail is
+  intentionally attached.
+- **For g(K+1) and later**: define `<Video 1>` as the previous generation's
+  rendered tail continuation reference, use
+  `[video continuation + reference generation]` in `summary`, and describe the
+  opening as continuing from the previous generation's ending state. The tail
+  is attached automatically by `render_all.py`, but the official Ref2VA format
+  still requires the label to be declared before it is used.
 - **SHOT count and timestamps must match the storyboard generation block exactly.**

@@ -128,6 +128,9 @@ STORYBOARD_FOR_SPATIAL = textwrap.dedent("""
     characters_present: [char_01]
     shot_size: wide
     composition: center
+    acting_beat: guarded stillness → ears lift → alert freeze
+    layout: lone figure foreground in amber pool, empty road layers receding behind
+    screen_direction: held
     action: Kayal stands by the lamp.
     camera: Static Shot.
     audio: Ambient night.
@@ -142,6 +145,9 @@ STORYBOARD_FOR_SPATIAL = textwrap.dedent("""
     characters_present: [char_01, char_05]
     shot_size: wide
     composition: depth
+    acting_beat: distant prowl → synchronized approach → threat becomes readable
+    layout: lamp-lit foreground, vulnerable subject midground, dog shapes deep background
+    screen_direction: left_to_right
     action: Dogs approach from the deep road.
     camera: Static Shot.
     audio: Dog footsteps.
@@ -152,6 +158,9 @@ STORYBOARD_FOR_SPATIAL = textwrap.dedent("""
     characters_present: [char_01, char_05]
     shot_size: medium
     composition: rule_of_thirds
+    acting_beat: dogs press forward → subject tightens stance → held confrontation
+    layout: subject isolated left third, advancing pack entering from right background
+    screen_direction: right_to_left
     action: Dogs continue approaching.
     camera: Push In slow.
     audio: Dog footsteps.
@@ -176,6 +185,11 @@ SCENES_FOR_SPATIAL = textwrap.dedent("""
     location_id: loc_03
     objects: []
     beats: [1]
+    style_target: atmospheric 2D anime realism with bold silhouettes
+    acting_beat: guarded stillness tightens into alert fear
+    layout_strategy: isolated foreground at the lamp, threat layered deep in the road
+    visual_motif: amber lamp pool against blue-black darkness
+    sound_world: night wind, distant dogs, low uneasy drone
 """).strip()
 
 
