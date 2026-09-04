@@ -66,6 +66,16 @@ DEFAULT_OUTPUT_BASE_DIR = os.getenv(
 MINIMAX_MEGAPIXELS = float(os.getenv("MINIMAX_MEGAPIXELS", "0.6"))
 MINIMAX_ASPECT = os.getenv("MINIMAX_ASPECT", "16:9")
 
+# Illustration style LoRA stack (see tools/style_presets.py and
+# assets/style-lora-presets.md). The preset is part of an episode's continuity
+# contract — set it once per episode and do not change it mid-episode.
+# Requires the LoRA-enabled graph:
+#   MINIMAX_H3_WORKFLOW=workflows/comfyui/minimax-h3-r2v-style-lora.json
+STYLE_PRESET = os.getenv("STYLE_PRESET", "none")
+STYLE_TURBO = (os.getenv("STYLE_TURBO", "") or "").strip().lower() in ("1", "true", "yes")
+# Per-scene directing LoRAs, e.g. "h3_camera_motion_v1_3000_pruned.safetensors:0.8"
+STYLE_EXTRA_LORAS = os.getenv("STYLE_EXTRA_LORAS", "")
+
 # ---------------------------------------------------------------------------
 # Image generation config
 # ---------------------------------------------------------------------------

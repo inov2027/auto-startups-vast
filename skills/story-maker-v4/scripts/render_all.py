@@ -40,6 +40,7 @@ import config  # noqa: E402
 from tools import image_pipeline as ip  # noqa: E402
 from tools import validators  # noqa: E402
 from tools.minimax_workflow import render_generation  # noqa: E402
+from tools.style_presets import PRESET_IDS, resolve_lora_stack  # noqa: E402
 from tools.video_concat import concat_videos  # noqa: E402
 from tools.video_frames import extract_tail  # noqa: E402
 
@@ -101,6 +102,7 @@ def _render_clip(
     run_dir: str, scene_id: str, gen: dict, clips_dir: str, *,
     seed: int, megapixels: float | None, aspect: str | None,
     extra_video_refs: list[str] | None = None,
+    style: dict | None = None,
 ) -> str:
     """Render one generation clip. Returns the output mp4 path."""
     gid = gen["gen_id"]
@@ -128,6 +130,7 @@ def _render_clip(
         aspect=aspect,
         extra_reference_video_paths=extra_video_refs,
         extra_reference_audio_paths=extra_audio_refs,
+        **(style or {}),
     )
     if result.get("status") != "success":
         _ntfy(f"[story-maker-v4] {scene_id}/{gid} render failed: {result.get('message', result)}")
@@ -156,6 +159,7 @@ def render_scene(
     megapixels: float | None, aspect: str | None,
     tail_ref_seconds: float = 3.0,
     prev_tail_ref: str | None = None,
+    style: dict | None = None,
 ) -> tuple[str, str | None]:
     """Render all generations for one scene sequentially with tail refs.
 
@@ -188,6 +192,7 @@ def render_scene(
             run_dir, scene_id, gen, clips_dir,
             seed=seed, megapixels=megapixels, aspect=aspect,
             extra_video_refs=extra_video_refs,
+            style=style,
         )
         clip_paths.append(clip_path)
 
@@ -216,7 +221,36 @@ def main() -> int:
     p.add_argument("--aspect", default=None, help=f"aspect ratio (default {config.MINIMAX_ASPECT})")
     p.add_argument("--tail-ref-seconds", type=float, default=3.0,
                    help="seconds of tail to extract as ref video for the next generation (default 3.0)")
+    p.add_argument("--style-preset", default=None,
+                   help=f"illustration style preset ({', '.join(PRESET_IDS)}); "
+                        f"default {config.STYLE_PRESET}. Requires the LoRA-enabled "
+                        "graph via MINIMAX_H3_WORKFLOW")
+    p.add_argument("--style-turbo", action="store_true", default=None,
+                   help="add the official ref2v 4-step turbo LoRA and drop the scheduler to 4 steps")
+    p.add_argument("--style-extra-loras", default=None,
+                   help="extra directing LoRAs, e.g. 'h3_camera_motion_v1_3000_pruned.safetensors:0.8'")
     args = p.parse_args()
+
+    # Fail fast on a bad preset: a typo must not surface hours into a render.
+    style = {
+        "style_preset": args.style_preset,
+        "style_turbo": args.style_turbo,
+        "style_extra_loras": args.style_extra_loras,
+    }
+    try:
+        stack = resolve_lora_stack(
+            args.style_preset if args.style_preset is not None else config.STYLE_PRESET,
+            turbo=config.STYLE_TURBO if args.style_turbo is None else args.style_turbo,
+            extra=(
+                args.style_extra_loras
+                if args.style_extra_loras is not None
+                else config.STYLE_EXTRA_LORAS
+            ),
+        )
+    except ValueError as exc:
+        raise SystemExit(f"style preset error: {exc}")
+    if stack:
+        print("style LoRA stack: " + ", ".join(f"{n}@{s}" for n, s in stack))
 
     run_dir = os.path.abspath(args.output_dir)
     only = {s.strip() for s in args.only_scenes.split(",") if s.strip()}
@@ -242,6 +276,7 @@ def main() -> int:
             megapixels=args.megapixels, aspect=args.aspect,
             tail_ref_seconds=args.tail_ref_seconds,
             prev_tail_ref=prev_tail_ref,
+            style=style,
         )
         scene_mp4s.append(scene_mp4)
 

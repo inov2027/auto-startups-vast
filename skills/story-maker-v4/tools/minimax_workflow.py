@@ -33,6 +33,11 @@ from tools.comfyui_tools import (
     wait_for_prompt,
 )
 from tools.duration_budget import GEN_MAX, GEN_MIN, minimax_frames
+from tools.style_presets import (
+    TURBO_REF2V_4STEP,
+    TURBO_STEPS,
+    resolve_lora_stack,
+)
 
 DECORATIVE = {"MarkdownNote", "Note", "Comment"}
 _SKIP_WIDGET = {"fixed", "randomize", "increment", "decrement"}
@@ -259,6 +264,90 @@ def simplify_minimax_graph(api: dict[str, dict], object_info: dict) -> None:
     if not roots:
         raise KeyError("workflow has no SaveVideo node")
     _prune_unreachable(api, roots)
+
+
+LORA_NODE = "LoraLoaderModelOnly"
+
+
+def _model_consumers(api: dict[str, dict], node_id: str) -> list[tuple[str, str]]:
+    """Return (consumer_id, input_name) pairs reading node_id's MODEL output."""
+    return [
+        (nid, key)
+        for nid, node in api.items()
+        for key, val in node["inputs"].items()
+        if _link_target(val) == node_id
+    ]
+
+
+def apply_style_preset(
+    api: dict[str, dict],
+    lora_stack: list[tuple[str, float]],
+    *,
+    turbo_steps: int | None = None,
+) -> list[str]:
+    """Rewrite the graph's LoRA chain to exactly ``lora_stack``.
+
+    Existing ``LoraLoaderModelOnly`` nodes are removed and rebuilt so a preset
+    fully determines the chain regardless of what the workflow JSON shipped
+    with. The chain is inserted on the *guider* branch only: ``BasicScheduler``
+    keeps reading the raw UNET, matching
+    ``workflows/comfyui/Minimax_h3_4_step_lora.json``.
+
+    Returns the ordered node ids of the created LoRA loaders.
+    """
+    unet_ids = [nid for nid, n in api.items() if n["class_type"] == "UNETLoader"]
+    if len(unet_ids) != 1:
+        raise KeyError(f"expected exactly one UNETLoader, found {len(unet_ids)}")
+    unet_id = unet_ids[0]
+
+    # Collapse any pre-existing LoRA chain back onto its upstream model so the
+    # preset is authoritative and repeated application stays idempotent.
+    for nid in [n for n, node in api.items() if node["class_type"] == LORA_NODE]:
+        upstream = api[nid]["inputs"].get("model")
+        for consumer_id, key in _model_consumers(api, nid):
+            api[consumer_id]["inputs"][key] = upstream
+        del api[nid]
+
+    if not lora_stack:
+        return []
+
+    # Everything that read the UNET directly, minus the scheduler branch.
+    consumers = [
+        (cid, key)
+        for cid, key in _model_consumers(api, unet_id)
+        if api[cid]["class_type"] != "BasicScheduler"
+    ]
+    if not consumers:
+        raise KeyError("no model consumer to insert the LoRA chain in front of")
+
+    numeric = [int(k) for k in api if k.isdigit()]
+    next_id = (max(numeric) + 1) if numeric else 1
+
+    upstream: list = [unet_id, 0]
+    created: list[str] = []
+    for name, strength in lora_stack:
+        nid = str(next_id)
+        next_id += 1
+        api[nid] = {
+            "class_type": LORA_NODE,
+            "inputs": {
+                "model": upstream,
+                "lora_name": name,
+                "strength_model": float(strength),
+            },
+        }
+        created.append(nid)
+        upstream = [nid, 0]
+
+    for cid, key in consumers:
+        api[cid]["inputs"][key] = list(upstream)
+
+    if turbo_steps is not None:
+        for node in api.values():
+            if node["class_type"] == "BasicScheduler":
+                node["inputs"]["steps"] = int(turbo_steps)
+
+    return created
 
 
 def load_api_workflow() -> dict[str, dict]:
@@ -489,6 +578,9 @@ def render_generation(
     extra_reference_paths: list[str] | None = None,
     extra_reference_video_paths: list[str] | None = None,
     extra_reference_audio_paths: list[str] | None = None,
+    style_preset: str | None = None,
+    style_turbo: bool | None = None,
+    style_extra_loras: str | None = None,
     max_wait: int = 7200,
 ) -> dict:
     """Render one <=15s Minimax H3 generation from a storyboard sheet.
@@ -542,6 +634,24 @@ def render_generation(
         reference_audio_names.append(aname)
 
     api = load_api_workflow()
+    try:
+        lora_stack = resolve_lora_stack(
+            style_preset if style_preset is not None else config.STYLE_PRESET,
+            turbo=config.STYLE_TURBO if style_turbo is None else style_turbo,
+            extra=(
+                style_extra_loras
+                if style_extra_loras is not None
+                else config.STYLE_EXTRA_LORAS
+            ),
+        )
+    except ValueError as exc:
+        return {"status": "error", "message": f"style preset: {exc}"}
+    # Always applied, including with an empty stack: the preset — not whichever
+    # LoRA widgets the workflow JSON happens to ship with — decides the chain.
+    turbo_on = any(name == TURBO_REF2V_4STEP for name, _ in lora_stack)
+    apply_style_preset(
+        api, lora_stack, turbo_steps=TURBO_STEPS if turbo_on else None,
+    )
     stem = Path(output_path).stem
     patch_generation(
         api,
