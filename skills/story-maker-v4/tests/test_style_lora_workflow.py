@@ -91,3 +91,100 @@ def test_lora_filenames_match_the_setup_script():
         filename, strength = node["widgets_values"][:2]
         assert filename in script, f"{filename} is not installed by the setup script"
         assert 0.0 <= float(strength) <= 1.5
+
+
+# --- end-to-end: real graph -> API prompt -> preset applied ------------------
+
+# Comfy-core input orders for the nodes that carry widgets. Without these the
+# UI->API widget mapping silently produces null lora_name values.
+_OBJECT_INPUTS = {
+    "UNETLoader": ["unet_name", "weight_dtype"],
+    "LoraLoaderModelOnly": ["model", "lora_name", "strength_model"],
+    "BasicScheduler": ["model", "scheduler", "steps", "denoise"],
+    "CLIPLoader": ["clip_name", "type", "device"],
+    "VAELoader": ["vae_name"],
+    "LoadImage": ["image", "upload"],
+    "KSamplerSelect": ["sampler_name"],
+    "RandomNoise": ["noise_seed"],
+    "SaveVideo": ["video", "filename_prefix", "format", "codec"],
+    "MiniMaxH3ReferenceToVideo": [
+        "clip", "vae", "audio_vae", "prompt", "width", "height", "length",
+        "ref_image_size",
+    ],
+}
+
+
+def _as_api_prompt() -> dict:
+    from tools.minimax_workflow import (
+        DECORATIVE,
+        simplify_minimax_graph,
+        ui_workflow_to_api,
+    )
+
+    wf = _load()
+    object_info = {}
+    for node in wf["nodes"]:
+        if node["type"] in DECORATIVE:
+            continue
+        names = _OBJECT_INPUTS.get(node["type"], [])
+        object_info.setdefault(
+            node["type"], {"input": {"required": {k: [] for k in names}, "optional": {}}}
+        )
+    api = ui_workflow_to_api(wf, object_info)
+    simplify_minimax_graph(api, object_info)
+    return api
+
+
+def _chain(api: dict) -> list[tuple[str, float]]:
+    return [
+        (n["inputs"]["lora_name"], n["inputs"]["strength_model"])
+        for n in api.values()
+        if n["class_type"] == "LoraLoaderModelOnly"
+    ]
+
+
+def test_shipped_graph_converts_with_resolvable_lora_widgets():
+    # A null lora_name here means the widget mapping broke, which ComfyUI would
+    # only report at queue time.
+    api = _as_api_prompt()
+    names = [name for name, _ in _chain(api)]
+    assert len(names) == 3
+    assert all(isinstance(n, str) and n.endswith(".safetensors") for n in names)
+
+
+def test_preset_overrides_the_graphs_baked_in_loras():
+    from tools.minimax_workflow import apply_style_preset
+    from tools.style_presets import resolve_lora_stack
+
+    api = _as_api_prompt()
+    assert _chain(api), "fixture should start with baked-in LoRAs"
+
+    apply_style_preset(api, resolve_lora_stack("none"))
+    assert _chain(api) == [], "preset 'none' must strip the JSON's own LoRAs"
+
+
+def test_preset_applied_to_the_real_graph_keeps_it_queueable():
+    import json as _json
+
+    from tools.minimax_workflow import apply_style_preset
+    from tools.style_presets import TURBO_STEPS, resolve_lora_stack
+
+    api = _as_api_prompt()
+    apply_style_preset(
+        api, resolve_lora_stack("p2", turbo=True), turbo_steps=TURBO_STEPS,
+    )
+
+    assert [name for name, _ in _chain(api)] == [
+        "studio1939-strong.safetensors",
+        "minimax_h3_looping_sketch_anime_v1.safetensors",
+        "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
+    ]
+    scheduler = next(n for n in api.values() if n["class_type"] == "BasicScheduler")
+    assert api[scheduler["inputs"]["model"][0]]["class_type"] == "UNETLoader"
+    assert scheduler["inputs"]["steps"] == TURBO_STEPS
+
+    _json.dumps(api)  # must stay serializable for POST /prompt
+    for nid, node in api.items():
+        for value in node["inputs"].values():
+            if isinstance(value, list) and len(value) == 2 and isinstance(value[0], str):
+                assert value[0] in api, f"{nid} links to pruned node {value[0]}"

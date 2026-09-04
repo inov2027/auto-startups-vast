@@ -12,17 +12,30 @@ bash workflows/setup/minimax-h3-r2v-style-lora.sh
 STYLE_LORA_COMMUNITY=1 bash workflows/setup/minimax-h3-r2v-style-lora.sh
 ```
 
-Render with the LoRA-enabled graph:
+Render with the LoRA-enabled graph and pick a preset:
 
 ```bash
 export MINIMAX_H3_WORKFLOW="$PWD/workflows/comfyui/minimax-h3-r2v-style-lora.json"
-python3 skills/story-maker-v4/scripts/render_all.py --story <story> --episode 1
+python3 skills/story-maker-v4/scripts/render_all.py --output-dir "$RUN" --style-preset p1
 ```
 
-`render_all.py` never edits LoRA slots — the workflow JSON is the single source
-of truth for which style is active. Pick a preset, set the strengths in the
-three `LoraLoaderModelOnly` nodes, and keep it frozen for the whole episode:
-changing style mid-episode breaks continuity harder than any prompt drift.
+Or set it once for the episode in `.env`:
+
+```bash
+STYLE_PRESET=p1        # none | p1 | p2 | p3 | p4 | p4-lite
+STYLE_TURBO=1          # add the ref2v 4-step turbo LoRA, scheduler -> 4 steps
+STYLE_EXTRA_LORAS=h3_camera_motion_v1_3000_pruned.safetensors:0.8
+```
+
+The preset — not the widgets baked into the workflow JSON — is authoritative.
+`tools/style_presets.py` resolves it to an ordered LoRA list and
+`minimax_workflow.apply_style_preset` rebuilds the graph's LoRA chain from that
+list on every render, so the JSON's own `LoraLoaderModelOnly` values are only a
+convenience default for opening the graph in the ComfyUI UI. A bad preset name
+fails before the first render rather than hours in.
+
+Pick a preset and keep it frozen for the whole episode: changing style
+mid-episode breaks continuity harder than any prompt drift.
 
 ## Installed LoRAs
 
@@ -47,81 +60,90 @@ review before any commercial use:
 
 ## Presets
 
-Slot 1 / 2 / 3 map to the three `LoraLoaderModelOnly` nodes in
-`workflows/comfyui/minimax-h3-r2v-style-lora.json`, top to bottom. Strength
-`0.0` disables a slot.
+Each preset is defined in `tools/style_presets.py` and selected with
+`--style-preset` / `STYLE_PRESET`. The tables below document what each one
+builds; you do not need to edit the workflow to switch between them.
 
-### P1 — 2D storybook illustration
+Turbo is orthogonal — add `--style-turbo` to any preset to append the ref2v
+4-step LoRA and drop `BasicScheduler` to 4 steps.
+
+### P1 — `p1` — 2D storybook illustration
 Warm painted picture-book pages that move.
 
-| Slot | LoRA | Strength |
-|---|---|---|
-| 1 | `studio1939-light` | 0.85 |
-| 2 | — | 0.0 |
-| 3 | turbo (optional) | 0.0 or 0.9 |
+| LoRA | Strength |
+|---|---|
+| `studio1939-light` | 0.85 |
 
 Prompt spine: *"hand-painted 2D storybook illustration, gouache texture on paper,
 soft warm palette, hand-inked contour lines, flat lighting, gentle held poses"*.
 
-### P2 — Folk illustration + flat geometric shapes
+### P2 — `p2` — Folk illustration + flat geometric shapes
 Woodcut/folk-art feel: bold flat shapes, limited palette, decorative pattern.
 
-| Slot | LoRA | Strength |
-|---|---|---|
-| 1 | `studio1939-strong` | 0.9 |
-| 2 | `minimax_h3_looping_sketch_anime_v1` | 0.35 |
-| 3 | turbo (optional) | 0.0 or 0.9 |
+| LoRA | Strength |
+|---|---|
+| `studio1939-strong` | 0.9 |
+| `minimax_h3_looping_sketch_anime_v1` | 0.3 |
 
 Prompt spine: *"folk-art illustration, flat geometric shapes, bold simplified
 silhouettes, three-colour limited palette, decorative repeating pattern,
 screen-print flatness, no gradients, no rendered volume"*.
-Slot 2 at low strength supplies the visible outline; above ~0.5 it turns the
-frame into a sketch and breaks the flat-shape read.
+The sketch LoRA at low strength supplies the visible outline; above ~0.5 it
+turns the frame into a sketch and breaks the flat-shape read.
 
-### P3 — Vintage editorial / storybook
+### P3 — `p3` — Vintage editorial / storybook
 Mid-century print look: muted inks, halftone grain, cropped editorial staging.
 
-| Slot | LoRA | Strength |
-|---|---|---|
-| 1 | `studio1939-light` | 0.7 |
-| 2 | `minimax_h3_looping_sketch_anime_v1` | 0.3 |
-| 3 | turbo (optional) | 0.0 or 0.9 |
+| LoRA | Strength |
+|---|---|
+| `studio1939-light` | 0.7 |
+| `minimax_h3_looping_sketch_anime_v1` | 0.3 |
 
 Prompt spine: *"vintage editorial illustration, 1950s print, muted ochre and
 teal ink, visible halftone grain and misregistered plates, textured paper,
 graphic cropped composition"*.
 
-### P4 — Semi-realistic fantasy concept art (painterly, anime-influenced)
-Character-design plates that hold up at close range.
+### P4 — `p4` — Semi-realistic fantasy concept art (painterly, anime-influenced)
+Character-design plates that hold up at close range. **Needs
+`STYLE_LORA_COMMUNITY=1` at install time.**
 
-| Slot | LoRA | Strength |
-|---|---|---|
-| 1 | `h3_painterly` (community) | 0.8 |
-| 2 | `h3_anime_flat_style` (community) | 0.3 |
-| 3 | turbo (optional) | 0.0 or 0.9 |
+| LoRA | Strength |
+|---|---|
+| `h3_painterly` (community mirror) | 0.8 |
+| `h3_anime_flat_style` (community mirror) | 0.3 |
 
-Without the community LoRAs, approximate with `studio1939-light` at 0.5 and
-carry the rest in the prompt:
-*"semi-realistic fantasy character concept art, painterly digital rendering,
-visible brushwork, anime-influenced facial structure with large expressive eyes,
-rim light and volumetric haze, muted desaturated fantasy palette,
-material-accurate leather and metal"*.
+Prompt spine: *"semi-realistic fantasy character concept art, painterly digital
+rendering, visible brushwork, anime-influenced facial structure with large
+expressive eyes, rim light and volumetric haze, muted desaturated fantasy
+palette, material-accurate leather and metal"*.
 
-Add `h3_spatial_physics_clean_3000_pruned` at 0.5–0.7 in a free slot for
-combat/contact-heavy generations, and `h3_camera_motion_v1_3000_pruned` at
-0.8 when the shot needs a specific camera move.
+### P4-lite — `p4-lite` — same look without the community LoRAs
+`studio1939-light` at 0.5 with the identical P4 prompt spine, which then carries
+most of the style. Use this when you have not opted into the Civitai mirror.
+
+### Directing LoRAs (any preset)
+
+```bash
+--style-extra-loras "h3_camera_motion_v1_3000_pruned.safetensors:0.8"
+--style-extra-loras "h3_spatial_physics_clean_3000_pruned.safetensors:0.6"
+```
+
+Camera motion 0.8 for a specific camera move; spatial physics 0.5–0.7 for
+combat/contact-heavy generations. These are per-scene decisions, so they are a
+separate flag rather than part of the episode's style contract.
 
 ## Rules
 
 1. **One preset per episode.** The style LoRA is part of the continuity
    contract, exactly like character sheets.
-2. **Total style strength ≤ ~1.2** across slots 1+2. Beyond that H3 loses
-   reference adherence and the storyboard sheet stops steering composition.
-3. **Turbo changes sampling, not style.** When slot 3 is on, drop the sampler to
-   4 steps in `BasicScheduler`; leaving it at 20+ steps with turbo on burns time
-   and over-sharpens.
+2. **Total style strength ≤ 1.2.** Beyond that H3 loses reference adherence and
+   the storyboard sheet stops steering composition. `resolve_lora_stack` raises
+   rather than letting a render silently ignore its sheet.
+3. **Turbo changes sampling, not style.** `--style-turbo` also sets
+   `BasicScheduler` to 4 steps; leaving it at 20+ with turbo on burns time and
+   over-sharpens.
 4. **Style words still matter.** These LoRAs bias rendering; the storyboard
    sheet and the prompt spine still carry composition, palette and staging.
    Repeat the style spine verbatim in every generation of the episode.
-5. **Do not stack more than two style LoRAs.** The third slot is for turbo or a
+5. **Do not stack more than two style LoRAs.** Extra slots are for turbo or a
    directing LoRA.

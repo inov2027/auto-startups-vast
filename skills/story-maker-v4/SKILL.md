@@ -435,6 +435,23 @@ user returns later. Override size with `--megapixels/--aspect` (default 0.6MP
 Flags:
 - `--tail-ref-seconds` (default 3.0): seconds of tail to extract as ref video
   for the next generation.
+- `--style-preset` (default `STYLE_PRESET`, else `none`): illustration style —
+  `p1` 2D storybook, `p2` folk + flat geometric, `p3` vintage editorial,
+  `p4` semi-realistic painterly concept art (needs the community LoRAs),
+  `p4-lite` the same look without them. Requires the LoRA-enabled graph
+  (`MINIMAX_H3_WORKFLOW=workflows/comfyui/minimax-h3-r2v-style-lora.json`) and
+  `workflows/setup/minimax-h3-r2v-style-lora.sh` on the ComfyUI host. The
+  preset rebuilds the graph's LoRA chain on every render, so it — not the
+  JSON's baked-in widgets — decides the look. **Pick one preset per episode and
+  keep it frozen: it is part of the continuity contract.**
+- `--style-turbo`: append the official ref2v 4-step turbo LoRA and drop
+  `BasicScheduler` to 4 steps.
+- `--style-extra-loras "<file>:<strength>, ..."`: per-scene directing LoRAs
+  (camera motion, spatial physics).
+
+See [`assets/style-lora-presets.md`](assets/style-lora-presets.md) for the
+prompt spine that must accompany each preset — the LoRA biases rendering, the
+prompt still carries composition and palette.
 
 **Verify:** `scene_sN.mp4` plays with audio and generation handoffs read as
 smooth transitions (not jarring jumps). `final_film.mp4` ≈ `TARGET` (±15%).
